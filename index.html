@@ -1,63 +1,92 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>10dicas</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>10dicas — Descubra com até 10 dicas</title>
+  
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
+  <link rel="manifest" href="assets/favicon/site.webmanifest">
+  <link rel="shortcut icon" href="assets/favicon/favicon.ico">
+  <meta name="theme-color" content="#1F2937">
+  
+  <!-- Fonte -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    #feedback {
+      min-height: 1.2rem;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
-  <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-lg text-center">
-    <h1 class="text-2xl font-bold mb-4">🎯 10dicas</h1>
-    
-    <!-- Dicas -->
-    <div id="hints" class="mb-4 space-y-2">
-      <p class="text-gray-400">Escolha um número de 1 a 10 para revelar uma dica.</p>
-      <div class="grid grid-cols-5 gap-2 mt-2">
-        <!-- Botões das dicas -->
-        <script>
-          for (let i = 1; i <= 10; i++) {
-            document.write(`<button onclick="revealHint(${i})" id="hintBtn${i}" 
-              class='bg-blue-600 hover:bg-blue-700 rounded-xl p-2 text-sm'>${i}</button>`);
-          }
-        </script>
-      </div>
-      <div id="revealedHints" class="mt-4 text-left space-y-2"></div>
-    </div>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-xl bg-gray-900 rounded-3xl p-6 shadow-xl border border-gray-800">
+    <!-- Logo / Header -->
+    <header class="text-center mb-6">
+      <h1 class="text-4xl font-extrabold tracking-tight">
+        <span class="text-blue-500">10</span>dicas
+      </h1>
+      <p class="text-sm text-gray-400 mt-2">Descubra a palavra do dia em até 10 dicas</p>
+    </header>
+
+    <!-- Botões das dicas -->
+    <section class="mb-6">
+      <p class="text-gray-300 mb-3 font-semibold">Revelar dica</p>
+      <div id="hintButtons" class="grid grid-cols-5 gap-2"></div>
+      <div id="revealedHints" class="mt-5 text-gray-200 space-y-3"></div>
+    </section>
 
     <!-- Chute -->
-    <div class="mb-4">
+    <section class="mb-6">
       <input id="guessInput" type="text" placeholder="Digite sua resposta"
-        class="w-full p-2 rounded-lg text-black mb-2">
-      <button onclick="makeGuess()" 
-        class="w-full bg-green-600 hover:bg-green-700 rounded-xl p-2 font-bold">Chutar</button>
-    </div>
+        class="w-full p-3 rounded-xl text-black mb-1 focus:ring-2 focus:ring-blue-500 outline-none" />
+      <button id="guessBtn"
+        class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold shadow-lg">
+        Chutar
+      </button>
+      <p id="feedback" class="text-red-400"></p>
+    </section>
 
     <!-- Desistir -->
-    <div class="mb-4">
-      <button onclick="giveUp()" 
-        class="w-full bg-red-600 hover:bg-red-700 rounded-xl p-2">Desistir</button>
-    </div>
+    <section class="mb-6">
+      <button id="giveUpBtn"
+        class="w-full bg-red-600 hover:bg-red-700 transition-colors rounded-xl p-3 font-semibold shadow-lg">
+        Desistir
+      </button>
+    </section>
 
     <!-- Resultado -->
-    <div id="result" class="hidden mt-4 p-3 bg-gray-700 rounded-xl"></div>
+    <div id="result" class="hidden mt-6 p-4 bg-gray-800 rounded-2xl border border-gray-700"></div>
+
+    <footer class="mt-6 text-xs text-gray-500 text-center">
+      <p>© 2025 <span class="text-blue-500 font-bold">10dicas</span> • Um jogo diário de adivinhação</p>
+    </footer>
   </div>
 
   <script>
-    // Exemplo de "jogo do dia"
+    const GAME_NAME = "10dicas";
+
     const gameOfTheDay = {
       answer: "Elefante",
       hints: [
         "É um animal.",
         "Vive em manadas.",
-        "Tem tromba.",
-        "É o maior mamífero terrestre.",
-        "Tem presas de marfim.",
-        "Vive na África e na Ásia.",
-        "Come plantas.",
-        "Pode pesar mais de 5 toneladas.",
+        "Possui tromba.",
+        "Maior mamífero terrestre.",
+        "Tem presas (marfim).",
+        "Encontrado em África e Ásia.",
+        "Alimenta-se de plantas.",
+        "Pode pesar várias toneladas.",
         "Tem orelhas grandes.",
-        "É cinza."
+        "Tem pele grossa e cinzenta."
       ]
     };
 
@@ -65,62 +94,99 @@
     let attempts = 0;
     let finished = false;
 
+    const hintButtonsContainer = document.getElementById("hintButtons");
+    for (let i = 1; i <= 10; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.id = `hintBtn${i}`;
+      btn.className = "bg-gray-800 hover:bg-gray-700 transition-colors rounded-xl p-3 text-sm font-bold";
+      btn.addEventListener("click", () => revealHint(i));
+      hintButtonsContainer.appendChild(btn);
+    }
+
     function revealHint(num) {
       if (finished || revealed.includes(num)) return;
       revealed.push(num);
-      document.getElementById(`hintBtn${num}`).disabled = true;
-      document.getElementById(`hintBtn${num}`).classList.add("opacity-50");
-      document.getElementById("revealedHints").innerHTML += 
-        `<p>💡 Dica ${num}: ${gameOfTheDay.hints[num - 1]}</p>`;
+      const btn = document.getElementById(`hintBtn${num}`);
+      btn.disabled = true;
+      btn.classList.add("opacity-40", "cursor-not-allowed");
+      const container = document.getElementById("revealedHints");
+      const p = document.createElement("p");
+      p.innerHTML = `💡 <span class="font-semibold text-blue-400">Dica ${num}:</span> ${gameOfTheDay.hints[num - 1]}`;
+      container.appendChild(p);
     }
+
+    const input = document.getElementById("guessInput");
+    const feedback = document.getElementById("feedback");
+
+    document.getElementById("guessBtn").addEventListener("click", makeGuess);
+    document.getElementById("giveUpBtn").addEventListener("click", giveUp);
 
     function makeGuess() {
       if (finished) return;
-      const guess = document.getElementById("guessInput").value.trim();
-      if (!guess) return alert("Digite uma resposta!");
+      const guess = input.value.trim();
+      if (!guess) {
+        feedback.textContent = "⚠️ Digite uma resposta!";
+        feedback.style.color = "#fbbf24"; // amarelo
+        return;
+      }
+
       attempts++;
       if (guess.toLowerCase() === gameOfTheDay.answer.toLowerCase()) {
         endGame(true);
       } else {
-        alert("❌ Resposta incorreta, tente outra!");
+        feedback.textContent = "❌ Resposta incorreta. Tente novamente ou revele outra dica.";
+        feedback.style.color = "#ef4444"; // vermelho
       }
+
+      // limpa o input e foca novamente
+      input.value = "";
+      input.focus();
     }
 
     function giveUp() {
-      if (!finished) endGame(false);
+      if (finished) return endGame(false);
     }
 
     function endGame(won) {
       finished = true;
       const resultDiv = document.getElementById("result");
       resultDiv.classList.remove("hidden");
+      feedback.textContent = ""; // limpa feedback
+
       if (won) {
         resultDiv.innerHTML = `
-          <p class="font-bold text-green-400">🎉 Você acertou em ${attempts} tentativas e ${revealed.length} dicas!</p>
-          <button onclick="shareResult(true)" 
-            class="mt-2 w-full bg-blue-600 hover:bg-blue-700 rounded-xl p-2">Compartilhar</button>
+          <p class="font-bold text-green-400 text-lg">🎉 Você acertou em ${attempts} tentativas e ${revealed.length} dicas!</p>
+          <div class="mt-3">
+            <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
+          </div>
         `;
       } else {
         resultDiv.innerHTML = `
-          <p class="font-bold text-red-400">😢 Você desistiu. A resposta era <b>${gameOfTheDay.answer}</b>.</p>
-          <button onclick="shareResult(false)" 
-            class="mt-2 w-full bg-blue-600 hover:bg-blue-700 rounded-xl p-2">Compartilhar</button>
+          <p class="font-bold text-red-400 text-lg">😢 Você desistiu. A resposta era <b>${gameOfTheDay.answer}</b>.</p>
+          <div class="mt-3">
+            <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
+          </div>
         `;
       }
+
+      document.getElementById("shareBtn").addEventListener("click", () => shareResult(won));
     }
 
     function shareResult(won) {
       const text = won
-        ? `🎯 Acertei o 10dicas em ${attempts} tentativas e ${revealed.length} dicas!`
-        : `😢 Desisti do 10dicas. A resposta era ${gameOfTheDay.answer}.`;
+        ? `🎯 No ${GAME_NAME} acertei em ${attempts} tentativas e ${revealed.length} dicas! Jogue: ${location.href}`
+        : `😢 No ${GAME_NAME} desisti. A resposta era ${gameOfTheDay.answer}. Jogue: ${location.href}`;
+
       if (navigator.share) {
-        navigator.share({
-          title: "Meu resultado no 10dicas",
-          text: text,
-          url: window.location.href
+        navigator.share({ title: `${GAME_NAME} — meu resultado`, text, url: location.href })
+          .catch(() => {});
+      } else if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert("Resultado copiado! Cole no WhatsApp ou redes sociais.");
         });
       } else {
-        alert("Copie e compartilhe: " + text);
+        prompt("Copie seu resultado:", text);
       }
     }
   </script>
