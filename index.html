@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10dicas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+  <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-lg text-center">
+    <h1 class="text-2xl font-bold mb-4">🎯 10dicas</h1>
+    
+    <!-- Dicas -->
+    <div id="hints" class="mb-4 space-y-2">
+      <p class="text-gray-400">Escolha um número de 1 a 10 para revelar uma dica.</p>
+      <div class="grid grid-cols-5 gap-2 mt-2">
+        <!-- Botões das dicas -->
+        <script>
+          for (let i = 1; i <= 10; i++) {
+            document.write(`<button onclick="revealHint(${i})" id="hintBtn${i}" 
+              class='bg-blue-600 hover:bg-blue-700 rounded-xl p-2 text-sm'>${i}</button>`);
+          }
+        </script>
+      </div>
+      <div id="revealedHints" class="mt-4 text-left space-y-2"></div>
+    </div>
+
+    <!-- Chute -->
+    <div class="mb-4">
+      <input id="guessInput" type="text" placeholder="Digite sua resposta"
+        class="w-full p-2 rounded-lg text-black mb-2">
+      <button onclick="makeGuess()" 
+        class="w-full bg-green-600 hover:bg-green-700 rounded-xl p-2 font-bold">Chutar</button>
+    </div>
+
+    <!-- Desistir -->
+    <div class="mb-4">
+      <button onclick="giveUp()" 
+        class="w-full bg-red-600 hover:bg-red-700 rounded-xl p-2">Desistir</button>
+    </div>
+
+    <!-- Resultado -->
+    <div id="result" class="hidden mt-4 p-3 bg-gray-700 rounded-xl"></div>
+  </div>
+
+  <script>
+    // Exemplo de "jogo do dia"
+    const gameOfTheDay = {
+      answer: "Elefante",
+      hints: [
+        "É um animal.",
+        "Vive em manadas.",
+        "Tem tromba.",
+        "É o maior mamífero terrestre.",
+        "Tem presas de marfim.",
+        "Vive na África e na Ásia.",
+        "Come plantas.",
+        "Pode pesar mais de 5 toneladas.",
+        "Tem orelhas grandes.",
+        "É cinza."
+      ]
+    };
+
+    let revealed = [];
+    let attempts = 0;
+    let finished = false;
+
+    function revealHint(num) {
+      if (finished || revealed.includes(num)) return;
+      revealed.push(num);
+      document.getElementById(`hintBtn${num}`).disabled = true;
+      document.getElementById(`hintBtn${num}`).classList.add("opacity-50");
+      document.getElementById("revealedHints").innerHTML += 
+        `<p>💡 Dica ${num}: ${gameOfTheDay.hints[num - 1]}</p>`;
+    }
+
+    function makeGuess() {
+      if (finished) return;
+      const guess = document.getElementById("guessInput").value.trim();
+      if (!guess) return alert("Digite uma resposta!");
+      attempts++;
+      if (guess.toLowerCase() === gameOfTheDay.answer.toLowerCase()) {
+        endGame(true);
+      } else {
+        alert("❌ Resposta incorreta, tente outra!");
+      }
+    }
+
+    function giveUp() {
+      if (!finished) endGame(false);
+    }
+
+    function endGame(won) {
+      finished = true;
+      const resultDiv = document.getElementById("result");
+      resultDiv.classList.remove("hidden");
+      if (won) {
+        resultDiv.innerHTML = `
+          <p class="font-bold text-green-400">🎉 Você acertou em ${attempts} tentativas e ${revealed.length} dicas!</p>
+          <button onclick="shareResult(true)" 
+            class="mt-2 w-full bg-blue-600 hover:bg-blue-700 rounded-xl p-2">Compartilhar</button>
+        `;
+      } else {
+        resultDiv.innerHTML = `
+          <p class="font-bold text-red-400">😢 Você desistiu. A resposta era <b>${gameOfTheDay.answer}</b>.</p>
+          <button onclick="shareResult(false)" 
+            class="mt-2 w-full bg-blue-600 hover:bg-blue-700 rounded-xl p-2">Compartilhar</button>
+        `;
+      }
+    }
+
+    function shareResult(won) {
+      const text = won
+        ? `🎯 Acertei o 10dicas em ${attempts} tentativas e ${revealed.length} dicas!`
+        : `😢 Desisti do 10dicas. A resposta era ${gameOfTheDay.answer}.`;
+      if (navigator.share) {
+        navigator.share({
+          title: "Meu resultado no 10dicas",
+          text: text,
+          url: window.location.href
+        });
+      } else {
+        alert("Copie e compartilhe: " + text);
+      }
+    }
+  </script>
+</body>
+</html>
