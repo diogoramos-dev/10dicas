@@ -89,18 +89,18 @@
     const GAME_NAME = "10dicas";
 
     const gameOfTheDay = {
-      answer: "Metamorfose",
+      answer: "Bússola",
       hints: [
-        "É um processo natural.",
-        "Envolve mudança radical de forma.",
-        "Acontece com diversos seres vivos.",
-        "É estudado na biologia.",
-        "Pode ser usado como metáfora para transformação pessoal.",
-        "O exemplo mais famoso envolve borboletas.",
-        "Tem várias etapas distintas.",
-        "A lagarta passa por isso.",
-        "Franz Kafka escreveu um livro com esse título.",
-        "Transformação completa de larva para adulto."
+        "Inventada na China.",
+        "Funciona mesmo sem eletricidade.",
+        "Está ligada ao magnetismo.",
+        "É usada em mapas.",
+        "Foi essencial para navegações marítimas.",
+        "Tem uma agulha que aponta sempre para o norte.",
+        "Cabe facilmente na mão.",
+        "Escoteiros ainda a utilizam.",
+        "Associada a exploradores.",
+        "Pode ser digital hoje em dia."
       ]
     };
 
@@ -159,6 +159,12 @@
     document.getElementById("guessBtn").addEventListener("click", makeGuess);
     document.getElementById("giveUpBtn").addEventListener("click", giveUp);
 
+    function normalizeText(text) {
+      return text.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
     function makeGuess() {
       if (finished) return;
       const guess = input.value.trim();
@@ -170,7 +176,7 @@
       attempts++;
       updateCounters();
       
-      if (guess.toLowerCase() === gameOfTheDay.answer.toLowerCase()) {
+      if (normalizeText(guess) === normalizeText(gameOfTheDay.answer)) {
         endGame(true);
       } else {
         showFeedback("❌ Resposta incorreta. Tente novamente ou revele outra dica.", "#ef4444");
@@ -228,7 +234,7 @@
         : `😢 No ${GAME_NAME} desisti. A resposta era ${gameOfTheDay.answer}. Jogue: ${location.href}`;
 
       if (navigator.share) {
-        navigator.share({ title: `${GAME_NAME} — meu resultado`, text, url: location.href })
+        navigator.share({ title: `${GAME_NAME} — meu resultado`, text })
           .catch(() => {});
       } else if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(text).then(() => {
