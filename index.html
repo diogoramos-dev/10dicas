@@ -86,21 +86,25 @@
   </div>
 
   <script>
+    /* 
+    DESENVOLVEDOR: Para resetar o jogo do dia durante os testes, 
+    abra o Console do navegador (F12) e digite: resetTodayGame()
+    */
     const GAME_NAME = "10dicas";
 
     const gameOfTheDay = {
-      answer: "Bússola",
+      answer: "Pinguim",
       hints: [
-        "Inventada na China.",
-        "Funciona mesmo sem eletricidade.",
-        "Está ligada ao magnetismo.",
-        "É usada em mapas.",
-        "Foi essencial para navegações marítimas.",
-        "Tem uma agulha que aponta sempre para o norte.",
-        "Cabe facilmente na mão.",
-        "Escoteiros ainda a utilizam.",
-        "Associada a exploradores.",
-        "Pode ser digital hoje em dia."
+        "Algumas espécies chegam a medir mais de 1 metro de altura.",
+        "O Linux tem um famoso mascote inspirado nele.",
+        "Seus movimentos em terra costumam parecer desajeitados.",
+        "Já estrelou em animações como \"Happy Feet\" e \"Madagascar\".",
+        "Não consegue voar, apesar de ser uma ave.",
+        "Costuma se organizar em grandes colônias.",
+        "Muitas vezes é associado a ternos e trajes sociais.",
+        "No Brasil, virou enfeite clássico em cima da geladeira.",
+        "É um excelente nadador e mergulhador.",
+        "Já foi vilão em histórias do Batman."
       ]
     };
 
@@ -109,15 +113,124 @@
     let finished = false;
     let feedbackTimeout;
 
-    const hintButtonsContainer = document.getElementById("hintButtons");
-    for (let i = 1; i <= 10; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = i;
-      btn.id = `hintBtn${i}`;
-      btn.className = "bg-gray-800 hover:bg-gray-700 transition-colors rounded-xl p-3 text-sm font-bold";
-      btn.addEventListener("click", () => revealHint(i));
-      hintButtonsContainer.appendChild(btn);
+    // Sistema de jogo diário
+    function getTodayKey() {
+      const today = new Date();
+      return `10dicas_${today.getFullYear()}_${today.getMonth() + 1}_${today.getDate()}`;
     }
+
+    function hasPlayedToday() {
+      const todayKey = getTodayKey();
+      return localStorage.getItem(todayKey) !== null;
+    }
+
+    function saveGameResult(won, finalAttempts, finalHints) {
+      const todayKey = getTodayKey();
+      const result = {
+        won: won,
+        attempts: finalAttempts,
+        hints: finalHints,
+        answer: gameOfTheDay.answer,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(todayKey, JSON.stringify(result));
+    }
+
+    function getTodayResult() {
+      const todayKey = getTodayKey();
+      const saved = localStorage.getItem(todayKey);
+      return saved ? JSON.parse(saved) : null;
+    }
+
+    // Função para desenvolvedores resetarem o jogo (console do navegador)
+    function resetTodayGame() {
+      const todayKey = getTodayKey();
+      localStorage.removeItem(todayKey);
+      location.reload();
+    }
+    
+    // Torna a função global para acesso via console
+    window.resetTodayGame = resetTodayGame;
+
+    function createHintButtons() {
+      const hintButtonsContainer = document.getElementById("hintButtons");
+      for (let i = 1; i <= 10; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.id = `hintBtn${i}`;
+        btn.className = "bg-gray-800 hover:bg-gray-700 transition-colors rounded-xl p-3 text-sm font-bold";
+        btn.addEventListener("click", () => revealHint(i));
+        hintButtonsContainer.appendChild(btn);
+      }
+    }
+
+    function showAlreadyPlayedResult() {
+      const result = getTodayResult();
+      if (!result) return;
+
+      finished = true;
+      attempts = result.attempts;
+      revealed = Array.from({length: result.hints}, (_, i) => i + 1);
+      
+      // Mostra as estatísticas
+      updateCounters();
+      
+      // Desabilita todos os botões de dica e revela as dicas usadas
+      for (let i = 1; i <= result.hints; i++) {
+        const btn = document.getElementById(`hintBtn${i}`);
+        btn.disabled = true;
+        btn.classList.add("opacity-40", "cursor-not-allowed");
+        
+        const container = document.getElementById("revealedHints");
+        const p = document.createElement("p");
+        p.innerHTML = `💡 <span class="font-semibold text-blue-400">Dica ${i}:</span> ${gameOfTheDay.hints[i - 1]}`;
+        container.appendChild(p);
+      }
+
+      // Esconde seções de chute e desistir
+      document.getElementById("guessSection").classList.add("hidden");
+      document.getElementById("giveUpSection").classList.add("hidden");
+
+      // Mostra o resultado
+      const resultDiv = document.getElementById("result");
+      resultDiv.classList.remove("hidden");
+
+      if (result.won) {
+        resultDiv.innerHTML = `
+          <p class="font-bold text-green-400 text-lg">🎉 Você já jogou hoje!</p>
+          <p class="mt-2 text-gray-300">Acertou em ${result.attempts} tentativas e ${result.hints} dicas.</p>
+          <p class="mt-2 text-gray-400 text-sm">Volte amanhã para um novo jogo.</p>
+          <div class="mt-3">
+            <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
+          </div>
+        `;
+      } else {
+        resultDiv.innerHTML = `
+          <p class="font-bold text-red-400 text-lg">🎯 Você já jogou hoje!</p>
+          <p class="mt-2 text-gray-300">Desistiu do jogo. A resposta era <b>${result.answer}</b>.</p>
+          <p class="mt-2 text-gray-400 text-sm">Volte amanhã para um novo jogo.</p>
+          <div class="mt-3">
+            <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
+          </div>
+        `;
+      }
+
+      document.getElementById("shareBtn").addEventListener("click", () => shareResult(result.won));
+    }
+
+    // Inicialização do jogo
+    function initializeGame() {
+      // Sempre cria os botões primeiro
+      createHintButtons();
+      
+      // Depois verifica se já jogou hoje
+      if (hasPlayedToday()) {
+        showAlreadyPlayedResult();
+      }
+    }
+
+    // Inicializa o jogo
+    initializeGame();
 
     function revealHint(num) {
       if (finished || revealed.includes(num)) return;
@@ -193,6 +306,9 @@
 
     function endGame(won) {
       finished = true;
+      
+      // Salva o resultado do jogo
+      saveGameResult(won, attempts, revealed.length);
       
       // Clear any pending feedback timeout
       if (feedbackTimeout) {
