@@ -93,18 +93,18 @@
     const GAME_NAME = "10dicas";
 
     const gameOfTheDay = {
-      answer: "Pinguim",
+      answer: "Abacaxi",
       hints: [
-        "Algumas espécies chegam a medir mais de 1 metro de altura.",
-        "O Linux tem um famoso mascote inspirado nele.",
-        "Seus movimentos em terra costumam parecer desajeitados.",
-        "Já estrelou em animações como \"Happy Feet\" e \"Madagascar\".",
-        "Não consegue voar, apesar de ser uma ave.",
-        "Costuma se organizar em grandes colônias.",
-        "Muitas vezes é associado a ternos e trajes sociais.",
-        "No Brasil, virou enfeite clássico em cima da geladeira.",
-        "É um excelente nadador e mergulhador.",
-        "Já foi vilão em histórias do Batman."
+        "Seu nome vem de uma palavra indígena que significa \"fruto que cheira\".",
+        "É considerado símbolo de hospitalidade no mundo todo.",
+        "É botanicamente considerado uma \"fruta múltipla\".",
+        "É ingrediente obrigatório na polêmica pizza havaiana.",
+        "Bob Esponja mora numa versão gigante dele no fundo do mar.",
+        "Contém uma enzima que \"come\" a língua se consumido demais.",
+        "Na gíria brasileira, representa algo complicado ou problemático.",
+        "Era tão valioso no século XVII que ricos o alugavam para festas.",
+        "Sua coroa pode ser plantada para gerar uma nova planta.",
+        "Demora cerca de 2 anos para amadurecer completamente."
       ]
     };
 
@@ -124,12 +124,13 @@
       return localStorage.getItem(todayKey) !== null;
     }
 
-    function saveGameResult(won, finalAttempts, finalHints) {
+    function saveGameResult(won, finalAttempts, finalHints, revealedHints) {
       const todayKey = getTodayKey();
       const result = {
         won: won,
         attempts: finalAttempts,
         hints: finalHints,
+        revealedHints: revealedHints, // Salva quais dicas foram reveladas
         answer: gameOfTheDay.answer,
         timestamp: Date.now()
       };
@@ -170,22 +171,24 @@
 
       finished = true;
       attempts = result.attempts;
-      revealed = Array.from({length: result.hints}, (_, i) => i + 1);
+      
+      // Usa os números das dicas originais se disponível, senão fallback para o método antigo
+      revealed = result.revealedHints || Array.from({length: result.hints}, (_, i) => i + 1);
       
       // Mostra as estatísticas
       updateCounters();
       
       // Desabilita todos os botões de dica e revela as dicas usadas
-      for (let i = 1; i <= result.hints; i++) {
-        const btn = document.getElementById(`hintBtn${i}`);
+      revealed.forEach(hintNum => {
+        const btn = document.getElementById(`hintBtn${hintNum}`);
         btn.disabled = true;
         btn.classList.add("opacity-40", "cursor-not-allowed");
         
         const container = document.getElementById("revealedHints");
         const p = document.createElement("p");
-        p.innerHTML = `💡 <span class="font-semibold text-blue-400">Dica ${i}:</span> ${gameOfTheDay.hints[i - 1]}`;
+        p.innerHTML = `💡 <span class="font-semibold text-blue-400">Dica ${hintNum}:</span> ${gameOfTheDay.hints[hintNum - 1]}`;
         container.appendChild(p);
-      }
+      });
 
       // Esconde seções de chute e desistir
       document.getElementById("guessSection").classList.add("hidden");
@@ -271,6 +274,14 @@
 
     document.getElementById("guessBtn").addEventListener("click", makeGuess);
     document.getElementById("giveUpBtn").addEventListener("click", giveUp);
+    
+    // Permite enviar resposta com Enter
+    input.addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        makeGuess();
+      }
+    });
 
     function normalizeText(text) {
       return text.toLowerCase()
@@ -308,7 +319,7 @@
       finished = true;
       
       // Salva o resultado do jogo
-      saveGameResult(won, attempts, revealed.length);
+      saveGameResult(won, attempts, revealed.length, revealed);
       
       // Clear any pending feedback timeout
       if (feedbackTimeout) {
