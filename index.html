@@ -93,18 +93,18 @@
     const GAME_NAME = "10dicas";
 
     const gameOfTheDay = {
-      answer: "Tabela Periódica",
+      answer: "Presépio",
       hints: [
-        "Possui ouro.",
-        "Fica pendurada na parede de muitas salas de aula.",
-        "Possui 18 grupos ou famílias.",
-        "J é a única letra do alfabeto não presente.",
-        "Possui 7 períodos.",
-        "Criada por Dmitri Mendeleiev.",
-        "Possui 118 quadrados.",
-        "Alguns dos seus membros são nobres.",
-        "Possui 4 blocos.",
-        "Possui símbolos."
+        "Possui animais.",
+        "O primeiro foi criado em 1223.",
+        "Possui presentes.",
+        "Costuma aparecer próximo a árvores.",
+        "Foi criado por São Francisco de Assis.",
+        "Costuma aparecer em dezembro.",
+        "Seu nome vem do termo em latim que significa curral.",
+        "Belchior aparece nele.",
+        "Possui um bebê.",
+        "Possui ouro."
       ]
     };
 
@@ -386,8 +386,8 @@
 
     function shareResult(won) {
       const text = won
-        ? `🎯 No ${GAME_NAME} acertei em ${attempts} tentativas e ${revealed.length} dicas! Jogue: ${location.href}`
-        : `😢 No ${GAME_NAME} desisti. A resposta era ${gameOfTheDay.answer}. Jogue: ${location.href}`;
+        ? `🎯 No ${GAME_NAME} acertei em ${attempts} tentativas e ${revealed.length} dicas! Jogue você também em: ${location.href}`
+        : `😢 No ${GAME_NAME} desisti hoje. Jogue você também em: ${location.href}`;
 
       if (navigator.share) {
         navigator.share({ title: `${GAME_NAME} — meu resultado`, text })
