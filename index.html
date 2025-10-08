@@ -207,7 +207,7 @@
       if (gameState.won) {
         resultDiv.innerHTML = `
           <p class="font-bold text-green-400 text-lg">🎉 Você já jogou hoje!</p>
-          <p class="mt-2 text-gray-300">Acertou em ${gameState.attempts} tentativas e ${gameState.hints} dicas.</p>
+          <p class="mt-2 text-gray-300">Acertou em ${gameState.attempts} ${pluralize(gameState.attempts, 'tentativa', 'tentativas')} e ${gameState.hints === 0 ? 'sem usar dicas' : `${gameState.hints} ${pluralize(gameState.hints, 'dica', 'dicas')}`}.</p>
           <p class="mt-2 text-gray-400 text-sm">Volte amanhã para um novo jogo.</p>
           <div class="mt-3">
             <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
@@ -317,6 +317,11 @@
         .replace(/[\u0300-\u036f]/g, '');
     }
 
+    function pluralize(count, singular, plural, zeroText = null) {
+      if (count === 0 && zeroText) return zeroText;
+      return count === 1 ? singular : plural;
+    }
+
     function makeGuess() {
       if (finished) return;
       const guess = input.value.trim();
@@ -365,7 +370,7 @@
 
       if (won) {
         resultDiv.innerHTML = `
-          <p class="font-bold text-green-400 text-lg">🎉 Você acertou em ${attempts} tentativas e ${revealed.length} dicas!</p>
+          <p class="font-bold text-green-400 text-lg">🎉 Você acertou em ${attempts} ${pluralize(attempts, 'tentativa', 'tentativas')} e ${revealed.length === 0 ? 'sem usar dicas' : `${revealed.length} ${pluralize(revealed.length, 'dica', 'dicas')}`}!</p>
           <p class="mt-2 text-gray-300">Volte amanhã para um novo jogo.</p>
           <div class="mt-3">
             <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
@@ -386,7 +391,7 @@
 
     function shareResult(won) {
       const text = won
-        ? `🎯 No ${GAME_NAME} acertei em ${attempts} tentativas e ${revealed.length} dicas! Jogue você também em: ${location.href}`
+        ? `🎯 No ${GAME_NAME} acertei em ${attempts} ${pluralize(attempts, 'tentativa', 'tentativas')} e ${revealed.length === 0 ? 'sem usar dicas' : `${revealed.length} ${pluralize(revealed.length, 'dica', 'dicas')}`}! Jogue você também em: ${location.href}`
         : `😢 No ${GAME_NAME} desisti hoje. Jogue você também em: ${location.href}`;
 
       if (navigator.share) {
