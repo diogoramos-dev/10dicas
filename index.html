@@ -36,13 +36,7 @@
       </h1>
       <div class="flex items-center justify-center gap-2 mt-2">
         <p class="text-sm text-gray-400">Descubra a palavra do dia em até 10 dicas</p>
-        <div class="relative">
-          <button id="infoBtn" class="text-gray-500 hover:text-gray-300 transition-colors text-sm w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center">ℹ</button>
-          <div id="tooltip" class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-gray-200 text-xs rounded-lg border border-gray-600 w-80 opacity-0 pointer-events-none transition-opacity duration-200 z-10">
-            A palavra do dia pode ser: substantivos comuns (casa, livro), pessoas famosas (Albert Einstein, Ayrton Senna), lugares (Brasil, Marte), palavras compostas (guarda-chuva) e locuções substantivas (cesta básica).
-            <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-600"></div>
-          </div>
-        </div>
+        <button id="infoBtn" class="text-gray-500 hover:text-gray-300 transition-colors text-sm w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center">ℹ</button>
       </div>
     </header>
 
@@ -92,6 +86,23 @@
     <footer class="mt-6 text-xs text-gray-500 text-center">
       <p>© 2025 <span class="text-blue-500 font-bold">10dicas</span> • Um jogo diário de adivinhação</p>
     </footer>
+  </div>
+
+  <!-- Modal de Informações -->
+  <div id="infoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-600 shadow-xl transform transition-transform duration-300 scale-95">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-white">💡 Tipos de palavras aceitas</h3>
+        <button id="closeModal" class="text-gray-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="text-gray-300 text-sm leading-relaxed max-h-60 overflow-y-auto">
+        <p>A palavra do dia pode ser: substantivos comuns (casa, livro), pessoas famosas (Albert Einstein, Ayrton Senna), lugares (Brasil, Marte), palavras compostas (guarda-chuva) e locuções substantivas (cesta básica).</p>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -271,44 +282,47 @@
     // Inicializa o jogo
     initializeGame();
 
-    // Tooltip/Popover para informações
+    // Modal de informações
     const infoBtn = document.getElementById('infoBtn');
-    const tooltip = document.getElementById('tooltip');
-    let tooltipVisible = false;
+    const infoModal = document.getElementById('infoModal');
+    const closeModal = document.getElementById('closeModal');
 
-    // Para desktop - hover
-    infoBtn.addEventListener('mouseenter', () => {
-      tooltip.classList.remove('opacity-0', 'pointer-events-none');
-      tooltip.classList.add('opacity-100');
-    });
+    function openModal() {
+      infoModal.classList.remove('opacity-0', 'pointer-events-none');
+      infoModal.classList.add('opacity-100');
+      infoModal.querySelector('.bg-gray-800').classList.remove('scale-95');
+      infoModal.querySelector('.bg-gray-800').classList.add('scale-100');
+      document.body.style.overflow = 'hidden'; // Previne scroll do fundo
+    }
 
-    infoBtn.addEventListener('mouseleave', () => {
-      if (!tooltipVisible) {
-        tooltip.classList.remove('opacity-100');
-        tooltip.classList.add('opacity-0', 'pointer-events-none');
-      }
-    });
+    function closeModalFunc() {
+      infoModal.classList.remove('opacity-100');
+      infoModal.classList.add('opacity-0', 'pointer-events-none');
+      infoModal.querySelector('.bg-gray-800').classList.remove('scale-100');
+      infoModal.querySelector('.bg-gray-800').classList.add('scale-95');
+      document.body.style.overflow = ''; // Restaura scroll
+    }
 
-    // Para mobile - click/touch
+    // Abre modal ao clicar no botão info
     infoBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      tooltipVisible = !tooltipVisible;
-      
-      if (tooltipVisible) {
-        tooltip.classList.remove('opacity-0', 'pointer-events-none');
-        tooltip.classList.add('opacity-100');
-      } else {
-        tooltip.classList.remove('opacity-100');
-        tooltip.classList.add('opacity-0', 'pointer-events-none');
+      openModal();
+    });
+
+    // Fecha modal ao clicar no X
+    closeModal.addEventListener('click', closeModalFunc);
+
+    // Fecha modal ao clicar no fundo escuro
+    infoModal.addEventListener('click', (e) => {
+      if (e.target === infoModal) {
+        closeModalFunc();
       }
     });
 
-    // Fecha tooltip ao clicar fora (mobile)
-    document.addEventListener('click', (e) => {
-      if (!infoBtn.contains(e.target) && !tooltip.contains(e.target)) {
-        tooltipVisible = false;
-        tooltip.classList.remove('opacity-100');
-        tooltip.classList.add('opacity-0', 'pointer-events-none');
+    // Fecha modal com tecla Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !infoModal.classList.contains('pointer-events-none')) {
+        closeModalFunc();
       }
     });
 
