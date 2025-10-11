@@ -72,6 +72,15 @@
       <p id="feedback" class="text-red-400"></p>
     </section>
 
+    <!-- Timeline de jogadas -->
+    <section id="gameTimelineSection" class="mb-6 hidden">
+      <button id="toggleTimelineBtn" class="w-full text-left text-gray-300 mb-3 font-semibold hover:text-white transition-colors flex items-center justify-between">
+        <span>Sua sequência de jogadas</span>
+        <span id="timelineToggleIcon" class="text-gray-500">▼</span>
+      </button>
+      <div id="gameTimelineList" class="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-3 max-h-40 overflow-y-auto hidden"></div>
+    </section>
+
     <!-- Desistir -->
     <section id="giveUpSection" class="mb-6">
       <button id="giveUpBtn"
@@ -155,6 +164,8 @@
     let attempts = 0;
     let finished = false;
     let feedbackTimeout;
+    let guessHistory = [];
+    let gameTimeline = []; // Array que guarda ordem cronológica: {type: 'hint'|'guess', data: {...}, timestamp: ...}
 
     // Sistema de jogo diário
     function getTodayKey() {
@@ -168,6 +179,8 @@
         status: isFinished ? "finished" : "playing",
         revealed: revealed,
         attempts: attempts,
+        guessHistory: guessHistory,
+        gameTimeline: gameTimeline,
         timestamp: Date.now()
       };
 
@@ -220,12 +233,19 @@
 
       finished = true;
       attempts = gameState.attempts;
+      guessHistory = gameState.guessHistory || [];
+      gameTimeline = gameState.gameTimeline || [];
       
       // Usa os números das dicas originais se disponível, senão fallback para o método antigo
       revealed = gameState.revealedHints || Array.from({length: gameState.hints}, (_, i) => i + 1);
       
       // Mostra as estatísticas
       updateCounters();
+      
+      // Mostra timeline se existir
+      if (gameTimeline.length > 0) {
+        updateGameTimeline();
+      }
       
       // Desabilita todos os botões de dica e revela as dicas usadas
       revealed.forEach(hintNum => {
@@ -252,8 +272,9 @@
           <p class="font-bold text-green-400 text-lg">🎉 Você já jogou hoje!</p>
           <p class="mt-2 text-gray-300">Acertou em ${gameState.attempts} ${pluralize(gameState.attempts, 'tentativa', 'tentativas')} e ${gameState.hints === 0 ? 'sem usar dicas' : `${gameState.hints} ${pluralize(gameState.hints, 'dica', 'dicas')}`}.</p>
           <p class="mt-2 text-gray-400 text-sm">Volte amanhã para um novo jogo.</p>
-          <div class="mt-3">
+          <div class="mt-3 space-y-2">
             <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
+            <button id="allHintsBtn" class="w-full bg-gray-600 hover:bg-gray-700 transition-colors rounded-xl p-3 font-semibold">Ver todas as dicas</button>
           </div>
         `;
       } else {
@@ -261,13 +282,15 @@
           <p class="font-bold text-red-400 text-lg">🎯 Você já jogou hoje!</p>
           <p class="mt-2 text-gray-300">Desistiu do jogo. A resposta era <b>${gameState.answer}</b>.</p>
           <p class="mt-2 text-gray-400 text-sm">Volte amanhã para um novo jogo.</p>
-          <div class="mt-3">
+          <div class="mt-3 space-y-2">
             <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
+            <button id="allHintsBtn" class="w-full bg-gray-600 hover:bg-gray-700 transition-colors rounded-xl p-3 font-semibold">Ver todas as dicas</button>
           </div>
         `;
       }
 
       document.getElementById("shareBtn").addEventListener("click", () => shareResult(gameState.won));
+      document.getElementById("allHintsBtn").addEventListener("click", showAllHints);
     }
 
     // Inicialização do jogo
@@ -286,7 +309,14 @@
       if (gameState && gameState.status === "playing") {
         revealed = gameState.revealed;
         attempts = gameState.attempts;
+        guessHistory = gameState.guessHistory || [];
+        gameTimeline = gameState.gameTimeline || [];
         updateCounters();
+        
+        // Restaura timeline se existir
+        if (gameTimeline.length > 0) {
+          updateGameTimeline();
+        }
         
         // Restaura as dicas já reveladas
         revealed.forEach(hintNum => {
@@ -352,6 +382,17 @@
     function revealHint(num) {
       if (finished || revealed.includes(num)) return;
       revealed.push(num);
+      
+      // Adiciona ao timeline
+      gameTimeline.push({
+        type: 'hint',
+        data: {
+          hintNumber: num,
+          hintText: gameOfTheDay.hints[num - 1]
+        },
+        timestamp: Date.now()
+      });
+      
       const btn = document.getElementById(`hintBtn${num}`);
       btn.disabled = true;
       btn.classList.add("opacity-40", "cursor-not-allowed");
@@ -360,12 +401,113 @@
       p.innerHTML = `💡 <span class="font-semibold text-blue-400">Dica ${num}:</span> ${gameOfTheDay.hints[num - 1]}`;
       container.appendChild(p);
       updateCounters();
+      updateGameTimeline();
       saveGameState(); // Salva estado atual
     }
 
     function updateCounters() {
       document.getElementById("attemptsCount").textContent = attempts;
       document.getElementById("hintsCount").textContent = revealed.length;
+    }
+
+    function updateGameTimeline() {
+      const section = document.getElementById("gameTimelineSection");
+      const list = document.getElementById("gameTimelineList");
+      const toggleBtn = document.getElementById("toggleTimelineBtn");
+      
+      if (gameTimeline.length === 0) {
+        section.classList.add("hidden");
+        return;
+      }
+      
+      section.classList.remove("hidden");
+      
+      // Adiciona event listener para o botão de toggle (apenas uma vez)
+      if (!toggleBtn.hasAttribute('data-listener-added')) {
+        toggleBtn.addEventListener('click', toggleTimeline);
+        toggleBtn.setAttribute('data-listener-added', 'true');
+      }
+      
+      list.innerHTML = "";
+      
+      gameTimeline.forEach((action, index) => {
+        const div = document.createElement("div");
+        div.className = "flex items-center gap-2 text-sm";
+        
+        if (action.type === 'hint') {
+          div.innerHTML = `
+            <span class="text-blue-400">💡</span>
+            <span class="text-gray-300">Revelou <span class="text-blue-400 font-semibold">dica ${action.data.hintNumber}</span>: "${action.data.hintText}"</span>
+          `;
+        } else if (action.type === 'guess') {
+          const isCorrect = normalizeText(action.data.guess) === normalizeText(gameOfTheDay.answer);
+          const icon = isCorrect ? "✅" : "❌";
+          const textColor = isCorrect ? "text-green-400" : "text-red-400";
+          const actionText = isCorrect ? "Acertou" : "Tentou";
+          
+          div.innerHTML = `
+            <span class="${textColor}">${icon}</span>
+            <span class="text-gray-300">${actionText} "<span class="${textColor} font-semibold">${action.data.guess}</span>"</span>
+          `;
+        }
+        
+        list.appendChild(div);
+      });
+    }
+
+    function toggleTimeline() {
+      const list = document.getElementById("gameTimelineList");
+      const icon = document.getElementById("timelineToggleIcon");
+      
+      if (list.classList.contains("hidden")) {
+        list.classList.remove("hidden");
+        icon.textContent = "▲";
+      } else {
+        list.classList.add("hidden");
+        icon.textContent = "▼";
+      }
+    }
+
+    function showAllHints() {
+      const resultDiv = document.getElementById("result");
+      const usedHints = [];
+      const unusedHints = [];
+      
+      gameOfTheDay.hints.forEach((hint, index) => {
+        if (revealed.includes(index + 1)) {
+          usedHints.push({number: index + 1, text: hint});
+        } else {
+          unusedHints.push({number: index + 1, text: hint});
+        }
+      });
+      
+      let hintsHtml = '<div class="mt-4 p-4 bg-gray-700 rounded-xl border border-gray-600">';
+      
+      if (usedHints.length > 0) {
+        hintsHtml += '<div class="mb-4"><p class="font-semibold text-green-400 mb-2">✅ Dicas que você viu:</p>';
+        usedHints.forEach(hint => {
+          hintsHtml += `<p class="text-sm text-gray-300 mb-1">• <span class="text-blue-400">Dica ${hint.number}:</span> ${hint.text}</p>`;
+        });
+        hintsHtml += '</div>';
+      }
+      
+      if (unusedHints.length > 0) {
+        hintsHtml += '<div><p class="font-semibold text-yellow-400 mb-2">💭 Dicas que você perdeu:</p>';
+        unusedHints.forEach(hint => {
+          hintsHtml += `<p class="text-sm text-gray-400 mb-1">• <span class="text-yellow-400">Dica ${hint.number}:</span> ${hint.text}</p>`;
+        });
+        hintsHtml += '</div>';
+      }
+      
+      hintsHtml += '</div>';
+      
+      // Remove o botão "Ver todas as dicas" e adiciona as dicas
+      const allHintsBtn = document.getElementById("allHintsBtn");
+      if (allHintsBtn) {
+        allHintsBtn.remove();
+      }
+      
+      resultDiv.innerHTML += hintsHtml;
     }
 
     function showFeedback(message, color, autoClear = true) {
@@ -418,7 +560,20 @@
       }
 
       attempts++;
+      guessHistory.push(guess);
+      
+      // Adiciona ao timeline
+      gameTimeline.push({
+        type: 'guess',
+        data: {
+          guess: guess,
+          isCorrect: normalizeText(guess) === normalizeText(gameOfTheDay.answer)
+        },
+        timestamp: Date.now()
+      });
+      
       updateCounters();
+      updateGameTimeline();
       saveGameState(); // Salva estado atual
       
       if (normalizeText(guess) === normalizeText(gameOfTheDay.answer)) {
@@ -459,21 +614,24 @@
         resultDiv.innerHTML = `
           <p class="font-bold text-green-400 text-lg">🎉 Você acertou em ${attempts} ${pluralize(attempts, 'tentativa', 'tentativas')} e ${revealed.length === 0 ? 'sem usar dicas' : `${revealed.length} ${pluralize(revealed.length, 'dica', 'dicas')}`}!</p>
           <p class="mt-2 text-gray-300">Volte amanhã para um novo jogo.</p>
-          <div class="mt-3">
+          <div class="mt-3 space-y-2">
             <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
+            <button id="allHintsBtn" class="w-full bg-gray-600 hover:bg-gray-700 transition-colors rounded-xl p-3 font-semibold">Ver todas as dicas</button>
           </div>
         `;
       } else {
         resultDiv.innerHTML = `
           <p class="font-bold text-red-400 text-lg">😢 Você desistiu. A resposta era <b>${gameOfTheDay.answer}</b>.</p>
           <p class="mt-2 text-gray-300">Volte amanhã para um novo jogo.</p>
-          <div class="mt-3">
+          <div class="mt-3 space-y-2">
             <button id="shareBtn" class="w-full bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl p-3 font-semibold">Compartilhar</button>
+            <button id="allHintsBtn" class="w-full bg-gray-600 hover:bg-gray-700 transition-colors rounded-xl p-3 font-semibold">Ver todas as dicas</button>
           </div>
         `;
       }
 
       document.getElementById("shareBtn").addEventListener("click", () => shareResult(won));
+      document.getElementById("allHintsBtn").addEventListener("click", showAllHints);
     }
 
     function shareResult(won) {
