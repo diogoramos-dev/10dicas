@@ -481,33 +481,48 @@
         }
       });
       
-      let hintsHtml = '<div class="mt-4 p-4 bg-gray-700 rounded-xl border border-gray-600">';
+      // Cria o elemento das dicas como um elemento DOM separado
+      const hintsContainer = document.createElement('div');
+      hintsContainer.className = 'mt-4 p-4 bg-gray-700 rounded-xl border border-gray-600';
+      hintsContainer.id = 'allHintsContainer';
       
       if (usedHints.length > 0) {
-        hintsHtml += '<div class="mb-4"><p class="font-semibold text-green-400 mb-2">✅ Dicas que você viu:</p>';
+        const usedSection = document.createElement('div');
+        usedSection.className = 'mb-4';
+        usedSection.innerHTML = '<p class="font-semibold text-green-400 mb-2">✅ Dicas que você viu:</p>';
+        
         usedHints.forEach(hint => {
-          hintsHtml += `<p class="text-sm text-gray-300 mb-1">• <span class="text-blue-400">Dica ${hint.number}:</span> ${hint.text}</p>`;
+          const hintP = document.createElement('p');
+          hintP.className = 'text-sm text-gray-300 mb-1';
+          hintP.innerHTML = `• <span class="text-blue-400">Dica ${hint.number}:</span> ${hint.text}`;
+          usedSection.appendChild(hintP);
         });
-        hintsHtml += '</div>';
+        
+        hintsContainer.appendChild(usedSection);
       }
       
       if (unusedHints.length > 0) {
-        hintsHtml += '<div><p class="font-semibold text-yellow-400 mb-2">💭 Dicas que você perdeu:</p>';
+        const unusedSection = document.createElement('div');
+        unusedSection.innerHTML = '<p class="font-semibold text-yellow-400 mb-2">💭 Dicas que você perdeu:</p>';
+        
         unusedHints.forEach(hint => {
-          hintsHtml += `<p class="text-sm text-gray-400 mb-1">• <span class="text-yellow-400">Dica ${hint.number}:</span> ${hint.text}</p>`;
+          const hintP = document.createElement('p');
+          hintP.className = 'text-sm text-gray-400 mb-1';
+          hintP.innerHTML = `• <span class="text-yellow-400">Dica ${hint.number}:</span> ${hint.text}`;
+          unusedSection.appendChild(hintP);
         });
-        hintsHtml += '</div>';
+        
+        hintsContainer.appendChild(unusedSection);
       }
       
-      hintsHtml += '</div>';
-      
-      // Remove o botão "Ver todas as dicas" e adiciona as dicas
+      // Esconde o botão "Ver todas as dicas"
       const allHintsBtn = document.getElementById("allHintsBtn");
       if (allHintsBtn) {
-        allHintsBtn.remove();
+        allHintsBtn.style.display = 'none';
       }
       
-      resultDiv.innerHTML += hintsHtml;
+      // Adiciona o container de dicas como elemento filho (preserva event listeners)
+      resultDiv.appendChild(hintsContainer);
     }
 
     function showFeedback(message, color, autoClear = true) {
